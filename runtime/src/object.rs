@@ -4,7 +4,7 @@ use crate::JvmValue;
 use crate::OtField;
 use crate::CONTEXT;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Trace, Finalize)]
 pub enum OtObj {
     vm_obj {
         id: usize,
@@ -51,8 +51,28 @@ impl OtObj {
         }
     }
 
-    pub fn put_field(&self, _f: OtField, _val: JvmValue) -> () {
-        //  FIXME
+    pub fn put_field(&mut self, f: OtField, val: JvmValue) -> () {
+        let (kid, fields) = match self {
+            OtObj::vm_obj {
+                id: _,
+                mark: _,
+                klassid: id,
+                fields: fs,
+            } => (id, fs),
+            _ => panic!("Not an object"),
+        };
+        // Get klass
+        let mut klass = match CONTEXT
+            .lock()
+            .unwrap()
+            .get_repo()
+            .id_lookup.get(&kid) {
+            Some(k) => k.clone(),
+            None => panic!("No klass with ID {} found in repo", kid),
+        };
+        // Lookup offset in klass
+        let offset = klass.get_field_offset(&f);
+        fields[offset] = val.clone();
     }
 
     // NOTE: Returns a by-value copy of what's held, put should unconditionally overwrite

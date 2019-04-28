@@ -1,9 +1,7 @@
 use std::collections::HashMap;
 use std::fmt;
 use std::sync::atomic::{AtomicUsize, Ordering};
-
 use std::path::Path;
-
 use std::sync::Mutex;
 
 #[macro_use]
@@ -12,6 +10,10 @@ extern crate lazy_static;
 lazy_static! {
     pub static ref CONTEXT: Mutex<VmContext> = Mutex::new(VmContext::of());
 }
+
+#[macro_use]
+extern crate gc_derive;
+extern crate gc;
 
 pub mod constant_pool;
 pub mod klass_parser;
@@ -35,7 +37,7 @@ use crate::constant_pool::ACC_NATIVE;
 
 //////////// RUNTIME VALUES
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Trace, Finalize)]
 pub enum JvmValue {
     Boolean { val: bool },
     Byte { val: i8 },
@@ -512,14 +514,14 @@ impl SharedSimpleHeap {
     }
 
     // FIXME Handle storage properly
-    pub fn put_field(&self, id: usize, f: OtField, v: JvmValue) -> () {
+    pub fn put_field(&mut self, id: usize, f: OtField, v: JvmValue) -> () {
         // Get object from heap
-        let obj = match self.alloc.get(id) {
-            Some(val) => val,
-            None => panic!("Error: object {} not found", id),
-        };
-        // Update value in it
-        obj.put_field(f, v)
+        // let obj : &OtObj = match self.alloc.get(id) {
+        //     Some(o) => o,
+        //     None => panic!("Error: object {} not found", id),
+        // };
+        // // Update value in it
+        // obj.put_field(f, v)
     }
 
     pub fn get_field(&self, id: usize, f: OtField) -> JvmValue {

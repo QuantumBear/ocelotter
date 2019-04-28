@@ -8,3 +8,5 @@ edition = "2018"
 byteorder = "1.2.7"
 lazy_static = "1.2.0"
 ocelotter_util = {path = "../util"}
+gc = "*"
+gc_derive = "*"
